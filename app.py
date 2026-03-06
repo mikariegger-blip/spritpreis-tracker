@@ -142,7 +142,7 @@ def health():
 HTML = r"""<!DOCTYPE html>
 <html lang="de">
 <head>
-<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"/>
 <title>⛽ Spritpreis-Tracker</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet"/>
@@ -277,10 +277,18 @@ header{background:var(--bg2);border-bottom:1px solid var(--border);padding:0 18p
 #toast.err{border-color:rgba(239,68,68,.3);color:#fca5a5}
 @media(max-width:768px){
   .main{flex-direction:column;height:auto;overflow:visible}
-  #map-container{height:45vh;flex:none}
-  #list-panel{width:100%;border-left:none;border-top:1px solid var(--border);height:50vh}
-  .search-btn{width:100%;justify-content:center}
+  #map-container{height:40vh;flex:none;touch-action:none}
+  #list-panel{width:100%;border-left:none;border-top:1px solid var(--border);height:auto;min-height:50vh;overflow-y:auto}
+  #station-list{height:auto;overflow-y:visible}
+  #scroll-btn{display:none;position:fixed;bottom:20px;right:16px;z-index:900;background:var(--amber);color:var(--bg);border:none;border-radius:24px;padding:10px 16px;font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,.4);gap:6px;align-items:center}
+  #scroll-btn.visible{display:flex}
   #addr-input{width:100%}
+  .card-brand{font-size:13px}
+  .price-big{font-size:16px}
+  .search-panel{padding:10px 12px}
+  .search-row{gap:6px}
+  .fuel-btn{padding:7px 10px;font-size:12px}
+  .txt-input{font-size:14px}
 }
 .leaflet-tile-pane{filter:brightness(.82) saturate(.55)}
 </style>
@@ -369,6 +377,9 @@ header{background:var(--bg2);border-bottom:1px solid var(--border);padding:0 18p
     </div>
   </div>
 </div>
+<button id="scroll-btn" onclick="document.getElementById('list-panel').scrollIntoView({behavior:'smooth'})">
+  ↓ Ergebnisse
+</button>
 <div id="toast"></div>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
@@ -502,6 +513,7 @@ async function doSearch(){
     setStatus('info','Tankstellen werden abgerufen (Tankerkönig)…');
     const data=await fetch(`/api/stations?lat=${coords.lat}&lng=${coords.lon}&rad=${S.radius}`).then(r=>{if(!r.ok)return r.json().then(e=>{throw new Error(e.error||'Fehler');});return r.json();});
     S.stations=data.stations;renderMarkers(S.stations,S.fuel);renderList(S.stations,S.fuel);
+    if(window.innerWidth<=768)document.getElementById('scroll-btn').classList.add('visible');
     setStatus('success',`${S.stations.length} Tankstellen (Quelle: Tankerkönig) – ${S.radius} km Umkreis`);
     toast(`${S.stations.length} Tankstellen gefunden`,'ok');startRefresh();
   }catch(e){setStatus('error',`Fehler: ${e.message}`);toast(e.message,'err');}
@@ -524,7 +536,16 @@ function clearRefresh(){if(S.refreshTimer)clearInterval(S.refreshTimer);if(S.cou
 function setLoad(on){S.loading=on;document.getElementById('map-loader').classList.toggle('on',on);document.getElementById('search-btn').disabled=on;}
 function setStatus(t,msg){const bar=document.getElementById('status-bar'),txt=document.getElementById('status-txt'),ico=document.getElementById('status-ico');bar.className='visible'+(t==='error'?' err':'');txt.textContent=msg;const icons={info:'<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/>',success:'<polyline points="20 6 9 17 4 12"/>',error:'<circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>'};ico.innerHTML=icons[t]||icons.info;}
 function toast(msg,type=''){const t=document.getElementById('toast');t.textContent=msg;t.className=`show ${type}`;clearTimeout(t._t);t._t=setTimeout(()=>t.className='',3000);}
-document.querySelectorAll('.fuel-btn').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('.fuel-btn').forEach(x=>x.classList.remove('active'));b.classList.add('active');S.fuel=b.dataset.fuel;if(S.stations.length){renderMarkers(S.stations,S.fuel);renderList(S.stations,S.fuel);}}));
+document.querySelectorAll('.fuel-btn').forEach(b=>b.addEventListener('click',()=>{
+  document.querySelectorAll('.fuel-btn').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active');S.fuel=b.dataset.fuel;
+  if(S.coords){doRefresh();}
+  else if(S.stations.length){renderMarkers(S.stations,S.fuel);renderList(S.stations,S.fuel);}
+}));
+document.getElementById('radius-sel').addEventListener('change',()=>{
+  S.radius=parseInt(document.getElementById('radius-sel').value);
+  if(S.coords) doRefresh();
+});
 document.getElementById('plz-input').addEventListener('keydown',e=>{if(e.key==='Enter')doSearch();if(e.key.length===1&&!/\d/.test(e.key))e.preventDefault();});
 document.getElementById('plz-input').addEventListener('input',e=>{e.target.classList.remove('error');e.target.value=e.target.value.replace(/\D/g,'').slice(0,5);});
 document.getElementById('addr-input').addEventListener('keydown',e=>{if(e.key==='Enter')doSearch();});
