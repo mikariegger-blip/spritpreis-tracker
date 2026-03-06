@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-⛽ Spritpreis-Tracker v4 – Cloud Deployment Version
+⛽ Spritpreis-Tracker v3 – Cloud Deployment Version
 Datenquelle: Tankerkönig API (CC BY 4.0)
 """
 
@@ -284,7 +284,11 @@ header{background:var(--bg2);border-bottom:1px solid var(--border);padding:0 18p
   #scroll-btn.visible{display:flex}
   #addr-input{width:100%}
   .card-brand{font-size:13px}
-  .price-big{font-size:16px}
+  .price-big{font-size:15px}
+  .price-sup{font-size:9px}
+  .price-unit{font-size:8px}
+  .stn-card{padding:8px 10px;gap:6px}
+  .card-price{min-width:52px}
   .search-panel{padding:10px 12px}
   .search-row{gap:6px}
   .fuel-btn{padding:7px 10px;font-size:12px}
