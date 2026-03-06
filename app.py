@@ -177,7 +177,7 @@ header{background:var(--bg2);border-bottom:1px solid var(--border);padding:0 18p
 .txt-input:focus{border-color:var(--amber);box-shadow:0 0 0 3px var(--amber-glow)}
 .txt-input.error{border-color:var(--red);box-shadow:0 0 0 3px rgba(239,68,68,.15)}
 #plz-input{width:120px;font-size:16px}
-#addr-input{width:260px;font-size:14px;display:none}
+#addr-input{width:260px;font-size:14px}
 .radius-sel{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);color:var(--text);font-family:'Barlow',sans-serif;font-size:14px;padding:8px 30px 8px 12px;outline:none;cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='7' viewBox='0 0 10 7'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%237c7f8a' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;min-width:100px}
 .radius-sel:focus{border-color:var(--amber)}
 .fuel-toggle{display:flex;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);overflow:hidden}
@@ -308,11 +308,12 @@ header{background:var(--bg2);border-bottom:1px solid var(--border);padding:0 18p
     <div class="field-grp">
       <div class="field-label" id="search-label">Postleitzahl</div>
       <input type="text" id="plz-input" class="txt-input" placeholder="12345" maxlength="5" inputmode="numeric"/>
-      <input type="text" id="addr-input" class="txt-input" placeholder="z.B. Rosenheimer Str. 1, München"/>
+      <input type="text" id="addr-input" class="txt-input" placeholder="z.B. Rosenheimer Str. 1, München" style="display:none"/>
     </div>
     <div class="field-grp">
       <div class="field-label">Umkreis</div>
       <select id="radius-sel" class="radius-sel">
+        <option value="2">2 km</option>
         <option value="5">5 km</option>
         <option value="10" selected>10 km</option>
         <option value="20">20 km</option>
@@ -428,7 +429,10 @@ function cardHtml(s,rank,fuel,cheapestId,isFav){
 }
 function hlCard(id){document.querySelectorAll('.stn-card').forEach(el=>el.style.outline='');const c=document.querySelector(`.stn-card[data-id="${id}"]`);if(c){c.scrollIntoView({behavior:'smooth',block:'nearest'});c.style.outline='1px solid rgba(245,166,35,.5)';}}
 function onCard(id){const s=S.stations.find(x=>x.id===id);if(!s)return;map.setView([s.lat,s.lng],15);const m=markers.find(mk=>{const l=mk.getLatLng();return Math.abs(l.lat-s.lat)<1e-5&&Math.abs(l.lng-s.lng)<1e-5;});if(m)m.openPopup();}
-async function loadFavorites(){try{const r=await fetch('/api/favorites');S.favorites=await r.json();}catch(e){}}
+async function loadFavorites(){
+  try{const r=await fetch('/api/favorites');const data=await r.json();S.favorites=Array.isArray(data)?data:[];}
+  catch(e){S.favorites=[];}
+}
 async function toggleFav(id,e){
   e.stopPropagation();const isFav=S.favorites.includes(id);
   try{const r=await fetch(`/api/favorites/${id}`,{method:isFav?'DELETE':'POST'});S.favorites=await r.json();if(S.stations.length){renderMarkers(S.stations,S.fuel);renderList(S.stations,S.fuel);}toast(isFav?'Favorit entfernt':'Als Favorit gespeichert ★',isFav?'':'ok');}catch(e){toast('Fehler','err');}
@@ -466,8 +470,8 @@ function drawHistChart(fuel){
 function setMode(m){
   S.mode=m;
   document.querySelectorAll('.mode-btn').forEach(b=>b.classList.toggle('active',(b.textContent==='PLZ'&&m==='plz')||(b.textContent==='Adresse'&&m==='addr')));
-  document.getElementById('plz-input').style.display=m==='plz'?'':'none';
-  document.getElementById('addr-input').style.display=m==='addr'?'':'none';
+  document.getElementById('plz-input').style.display=m==='plz'?'block':'none';
+  document.getElementById('addr-input').style.display=m==='addr'?'block':'none';
   document.getElementById('search-label').textContent=m==='plz'?'Postleitzahl':'Adresse / Straße';
 }
 async function geocode(){
