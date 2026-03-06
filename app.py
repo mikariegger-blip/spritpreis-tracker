@@ -77,7 +77,7 @@ def geocode():
             return jsonify({"error": "Ungültige PLZ (5 Ziffern)"}), 400
         url = f"https://nominatim.openstreetmap.org/search?postalcode={plz}&country=DE&format=json"
     elif q:
-        url = f"https://nominatim.openstreetmap.org/search?q={quote(q)}&country=DE&format=json&limit=1"
+        url = f"https://nominatim.openstreetmap.org/search?q={quote(q, safe='')}&format=json&limit=1&addressdetails=1"
     else:
         return jsonify({"error": "PLZ oder Adresse angeben"}), 400
     try:
@@ -219,7 +219,7 @@ header{background:var(--bg2);border-bottom:1px solid var(--border);padding:0 18p
 .stn-card.cheapest-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--green)}
 .card-left{display:flex;flex-direction:column;align-items:center;gap:6px;flex-shrink:0;padding-top:1px}
 .rank-num{font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;color:var(--muted);width:18px;text-align:right}
-.fav-btn{background:none;border:none;cursor:pointer;padding:0;font-size:14px;line-height:1;opacity:.4;transition:opacity .15s,transform .15s}
+.fav-btn{background:none;border:none;cursor:pointer;padding:2px;font-size:16px;line-height:1;opacity:.6;transition:opacity .15s,transform .15s;color:var(--amber)}
 .fav-btn:hover{opacity:1;transform:scale(1.2)}
 .fav-btn.active{opacity:1}
 .card-info{flex:1;min-width:0}
@@ -418,7 +418,7 @@ function cardHtml(s,rank,fuel,cheapestId,isFav){
   const priceEl=p?`<div class="price-big ${cheap?'cheapest':isFav?'fav-price':''}">${p.slice(0,-1)}<sup class="price-sup">${p.slice(-1)}</sup></div><span class="price-unit">€/L</span>`:`<div class="price-big na">nicht verfügbar</div>`;
   return `<div class="stn-card ${isFav?'fav-card':''} ${cheap&&!isFav?'cheapest-card':''}" data-id="${s.id}" onclick="onCard('${s.id}')">
     ${cheap?'<div class="crown">✓</div>':''}
-    <div class="card-left"><span class="rank-num">${rank}</span><button class="fav-btn ${isFav?'active':''}" onclick="toggleFav('${s.id}',event)">${isFav?'★':'☆'}</button></div>
+    <div class="card-left"><span class="rank-num">${rank}</span><button class="fav-btn ${isFav?'active':''}" onclick="toggleFav('${s.id}',event)" title="${isFav?'Favorit entfernen':'Als Favorit speichern'}">${isFav?'\u2605':'\u2606'}</button></div>
     <div class="card-info">
       <div class="card-brand">${brand}</div>
       <div class="card-addr">${addr||'—'}</div>
@@ -430,12 +430,19 @@ function cardHtml(s,rank,fuel,cheapestId,isFav){
 function hlCard(id){document.querySelectorAll('.stn-card').forEach(el=>el.style.outline='');const c=document.querySelector(`.stn-card[data-id="${id}"]`);if(c){c.scrollIntoView({behavior:'smooth',block:'nearest'});c.style.outline='1px solid rgba(245,166,35,.5)';}}
 function onCard(id){const s=S.stations.find(x=>x.id===id);if(!s)return;map.setView([s.lat,s.lng],15);const m=markers.find(mk=>{const l=mk.getLatLng();return Math.abs(l.lat-s.lat)<1e-5&&Math.abs(l.lng-s.lng)<1e-5;});if(m)m.openPopup();}
 async function loadFavorites(){
-  try{const r=await fetch('/api/favorites');const data=await r.json();S.favorites=Array.isArray(data)?data:[];}
-  catch(e){S.favorites=[];}
+  try{
+    const stored=localStorage.getItem('spritpreis_favorites');
+    S.favorites=stored?JSON.parse(stored):[];
+  }catch(e){S.favorites=[];}
 }
 async function toggleFav(id,e){
-  e.stopPropagation();const isFav=S.favorites.includes(id);
-  try{const r=await fetch(`/api/favorites/${id}`,{method:isFav?'DELETE':'POST'});S.favorites=await r.json();if(S.stations.length){renderMarkers(S.stations,S.fuel);renderList(S.stations,S.fuel);}toast(isFav?'Favorit entfernt':'Als Favorit gespeichert ★',isFav?'':'ok');}catch(e){toast('Fehler','err');}
+  e.stopPropagation();
+  const isFav=S.favorites.includes(id);
+  if(isFav){S.favorites=S.favorites.filter(f=>f!==id);}
+  else{S.favorites.push(id);}
+  try{localStorage.setItem('spritpreis_favorites',JSON.stringify(S.favorites));}catch(e){}
+  if(S.stations.length){renderMarkers(S.stations,S.fuel);renderList(S.stations,S.fuel);}
+  toast(isFav?'Favorit entfernt':'Als Favorit gespeichert ★',isFav?'':'ok');
 }
 async function openHist(id,name,e){
   e.stopPropagation();
