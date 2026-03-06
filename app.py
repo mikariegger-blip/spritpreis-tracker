@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-⛽ Spritpreis-Tracker v3 – Cloud Deployment Version
+⛽ Spritpreis-Tracker v4 – Cloud Deployment Version
 Datenquelle: Tankerkönig API (CC BY 4.0)
 """
 
