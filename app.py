@@ -280,15 +280,16 @@ header{background:var(--bg2);border-bottom:1px solid var(--border);padding:0 18p
   #map-container{height:40vh;flex:none;touch-action:none}
   #list-panel{width:100%;border-left:none;border-top:1px solid var(--border);height:auto;min-height:50vh;overflow-y:auto}
   #station-list{height:auto;overflow-y:visible}
-  #scroll-btn{display:none;position:fixed;bottom:20px;right:16px;z-index:900;background:var(--amber);color:var(--bg);border:none;border-radius:24px;padding:10px 16px;font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,.4);gap:6px;align-items:center}
-  #scroll-btn.visible{display:flex}
+  #scroll-btn{display:none}
+  #station-list{padding-bottom:10px}
   #addr-input{width:100%}
   .card-brand{font-size:13px}
   .price-big{font-size:15px}
   .price-sup{font-size:9px}
   .price-unit{font-size:8px}
   .stn-card{padding:8px 10px;gap:6px}
-  .card-price{min-width:52px}
+  .card-price{min-width:56px;flex-shrink:0}
+  .card-info{min-width:0;flex:1;overflow:hidden}
   .search-panel{padding:10px 12px}
   .search-row{gap:6px}
   .fuel-btn{padding:7px 10px;font-size:12px}
